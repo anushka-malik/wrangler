@@ -1,0 +1,19 @@
+1. Generate lexer and parser rules for BYTE_SIZE and TIME_DURATION tokens in ANTLR grammar (Directives.g4) to recognize values like "10MB", "150ms", etc.
+
+2. Help me write Java classes ByteSize.java and TimeDuration.java that extend Token and parse input strings like "1.5MB" or "2s", with methods to return canonical values in bytes and nanoseconds.
+
+3. How do I modify the visitor in RecipeVisitor.java to handle new grammar rules like ByteSizeList and TimeDurationList?
+
+4. Implement a new directive AggregateStats.java that aggregates byte and time duration values across rows and returns output in MB and seconds.
+
+5. Fix Checkstyle and PMD errors in AggregateStats.java (line too long, missing Javadoc, final parameters, etc.).
+
+6. Resolve Checkstyle and PMD errors in RecipeVisitor.java and ensure the class adheres to the 80-character line limit and Java coding conventions.
+
+7. Commands to clean, build, and verify a multi-module Maven project using mvn clean install -DskipTests and checkstyle:checkstyle.
+
+8. What to do when Maven throws a bad class file error due to missing .class files in target/classes directory?
+
+9. Provide detailed commands to push local changes to a forked GitHub repo and create a feature branch.
+
+10. Generate a README.md usage snippet for the new directive 'aggregate-stats' showing example syntax and expected behavior.
