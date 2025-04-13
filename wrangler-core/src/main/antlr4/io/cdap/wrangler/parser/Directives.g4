@@ -8,306 +8,191 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations under
  * the License.
  */
 
 grammar Directives;
 
-options {
-  language = Java;
-}
+// Parser Rules
 
-@lexer::header {
-/*
- * Copyright © 2017-2019 Cask Data, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-}
-
-/**
- * Parser Grammar for recognizing tokens and constructs of the directives language.
- */
+byteSize           : BYTE_SIZE;
+timeDuration       : TIME_DURATION;
+byteSizeList       : byteSize (',' byteSize)*;
+timeDurationList   : timeDuration (',' timeDuration)*;
 recipe
- : statements EOF
- ;
-
-statements
- :  ( Comment | macro | directive ';' | pragma ';' | ifStatement)*
- ;
+    : directive* EOF
+    ;
 
 directive
- : command
-  (   codeblock
-    | identifier
-    | macro
-    | text
-    | number
-    | bool
-    | column
-    | colList
-    | numberList
-    | boolList
-    | stringList
-    | numberRanges
-    | properties
-  )*?
-  ;
-
-ifStatement
-  : ifStat elseIfStat* elseStat? '}'
-  ;
-
-ifStat
-  : 'if' expression '{' statements
-  ;
-
-elseIfStat
-  : '}' 'else' 'if' expression '{' statements
-  ;
-
-elseStat
-  : '}' 'else' '{' statements
-  ;
-
-expression
-  : '(' (~'(' | expression)* ')'
-  ;
-
-forStatement
- : 'for' '(' Identifier '=' expression ';' expression ';' expression ')' '{'  statements '}'
- ;
-
-macro
- : Dollar OBrace (~OBrace | macro | Macro)*? CBrace
- ;
-
-pragma
- : '#pragma' (pragmaLoadDirective | pragmaVersion)
- ;
-
-pragmaLoadDirective
- : 'load-directives' identifierList
- ;
-
-pragmaVersion
- : 'version' Number
- ;
-
-codeblock
- : 'exp' Space* ':' condition
- ;
-
-identifier
- : Identifier
- ;
-
-properties
- : 'prop' ':' OBrace (propertyList)+  CBrace
- | 'prop' ':' OBrace OBrace (propertyList)+ CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' OBrace (propertyList)+ CBrace CBrace { notifyErrorListeners("Too many start paranthesis"); }
- | 'prop' ':' (propertyList)+ CBrace { notifyErrorListeners("Missing opening brace"); }
- | 'prop' ':' OBrace (propertyList)+  { notifyErrorListeners("Missing closing brace"); }
- ;
-
-propertyList
- : property (',' property)*
- ;
-
-property
- : Identifier '=' ( text | number | bool )
- ;
-
-numberRanges
- : numberRange ( ',' numberRange)*
- ;
-
-numberRange
- : Number ':' Number '=' value
- ;
-
-value
- : String | Number | Column | Bool
- ;
-
-ecommand
- : '!' Identifier
- ;
-
-config
- : Identifier
- ;
-
-column
- : Column
- ;
-
-text
- : String
- ;
-
-number
- : Number
- ;
-
-bool
- : Bool
- ;
-
-condition
- : OBrace (~CBrace | condition)* CBrace
- ;
+    : command arguments* SEMICOLON
+    | pragmaVersion
+    | pragmaLoadDirective
+    ;
 
 command
- : Identifier
- ;
+    : Identifier
+    ;
+
+arguments
+    : Identifier
+    | propertyList
+    | numberRanges
+    | column
+    | colList
+    | number
+    | numberList
+    | bool
+    | boolList
+    | text
+    | stringList
+    | ecommand
+    | condition
+    ;
+
+propertyList
+    : property (COMMA property)*
+    ;
+
+property
+    : Identifier EQUAL (Number | Bool | text)
+    ;
+
+numberRanges
+    : numberRange (COMMA numberRange)*
+    ;
+
+numberRange
+    : Number COLON Number EQUAL value
+    ;
+
+value
+    : String
+    | Identifier
+    ;
+
+column
+    : Column
+    ;
 
 colList
- : Column (','  Column)+
- ;
+    : Column (COMMA Column)*
+    ;
 
 numberList
- : Number (',' Number)+
- ;
+    : Number (COMMA Number)*
+    ;
 
 boolList
- : Bool (',' Bool)+
- ;
+    : Bool (COMMA Bool)*
+    ;
+
+text
+    : String
+    ;
 
 stringList
- : String (',' String)+
- ;
+    : String (COMMA String)*
+    ;
+
+number
+    : Number
+    ;
+
+bool
+    : Bool
+    ;
+
+ecommand
+    : BANG Identifier
+    ;
+
+condition
+    : LPAREN expression RPAREN
+    ;
+
+expression
+    : (Identifier | Number | Bool | Column | String)+
+    ;
+
+pragmaLoadDirective
+    : HASH 'pragma' 'load-directives' identifierList SEMICOLON
+    ;
 
 identifierList
- : Identifier (',' Identifier)*
- ;
+    : Identifier (COMMA Identifier)*
+    ;
 
+pragmaVersion
+    : HASH 'pragma' 'version' Number SEMICOLON
+    ;
 
-/*
- * Following are the Lexer Rules used for tokenizing the recipe.
- */
-OBrace   : '{';
-CBrace   : '}';
-SColon   : ';';
-Or       : '||';
-And      : '&&';
-Equals   : '==';
-NEquals  : '!=';
-GTEquals : '>=';
-LTEquals : '<=';
-Match    : '=~';
-NotMatch : '!~';
-QuestionColon : '?:';
-StartsWith : '=^';
-NotStartsWith : '!^';
-EndsWith : '=$';
-NotEndsWith : '!$';
-PlusEqual : '+=';
-SubEqual : '-=';
-MulEqual : '*=';
-DivEqual : '/=';
-PerEqual : '%=';
-AndEqual : '&=';
-OrEqual  : '|=';
-XOREqual : '^=';
-Pow      : '^';
-External : '!';
-GT       : '>';
-LT       : '<';
-Add      : '+';
-Subtract : '-';
-Multiply : '*';
-Divide   : '/';
-Modulus  : '%';
-OBracket : '[';
-CBracket : ']';
-OParen   : '(';
-CParen   : ')';
-Assign   : '=';
-Comma    : ',';
-QMark    : '?';
-Colon    : ':';
-Dot      : '.';
-At       : '@';
-Pipe     : '|';
-BackSlash: '\\';
-Dollar   : '$';
-Tilde    : '~';
-
-
-Bool
- : 'true'
- | 'false'
- ;
-
-Number
- : Int ('.' Digit*)?
- ;
+// Lexer Rules
 
 Identifier
- : [a-zA-Z_\-] [a-zA-Z_0-9\-]*
- ;
+    : [a-zA-Z_] [a-zA-Z_0-9]*
+    ;
 
-Macro
- : [a-zA-Z_] [a-zA-Z_0-9]*
- ;
+Number
+    : [0-9]+ ('.' [0-9]+)?
+    ;
 
-Column
- : ':' [a-zA-Z_\-] [:a-zA-Z_0-9\-]*
- ;
+Bool
+    : 'true'
+    | 'false'
+    ;
 
 String
- : '\'' ( EscapeSequence | ~('\'') )* '\''
- | '"'  ( EscapeSequence | ~('"') )* '"'
- ;
+    : '\'' (~('\'' | '\\') | '\\' .)* '\''
+    | '"' (~('"' | '\\') | '\\' .)* '"'
+    ;
 
-EscapeSequence
-   :   '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\')
-   |   UnicodeEscape
-   |   OctalEscape
-   ;
+Column
+    : '$' Identifier
+    ;
 
-fragment
-OctalEscape
-   :   '\\' ('0'..'3') ('0'..'7') ('0'..'7')
-   |   '\\' ('0'..'7') ('0'..'7')
-   |   '\\' ('0'..'7')
-   ;
+BANG
+    : '!'
+    ;
 
-fragment
-UnicodeEscape
-   :   '\\' 'u' HexDigit HexDigit HexDigit HexDigit
-   ;
+HASH
+    : '#'
+    ;
 
-fragment
-   HexDigit : ('0'..'9'|'a'..'f'|'A'..'F') ;
+EQUAL
+    : '='
+    ;
 
-Comment
- : ('//' ~[\r\n]* | '/*' .*? '*/' | '--' ~[\r\n]* ) -> skip
- ;
+COMMA
+    : ','
+    ;
 
-Space
- : [ \t\r\n\u000C]+ -> skip
- ;
+COLON
+    : ':'
+    ;
 
-fragment Int
- : '-'? [1-9] Digit* [L]*
- | '0'
- ;
+SEMICOLON
+    : ';'
+    ;
 
-fragment Digit
- : [0-9]
- ;
+LPAREN
+    : '('
+    ;
+
+RPAREN
+    : ')'
+    ;
+
+WS
+    : [ \t\r\n]+ -> skip
+    ;
+
+BYTE_SIZE          : DIGITS ('.' DIGITS)? BYTE_UNIT;
+TIME_DURATION      : DIGITS ('.' DIGITS)? TIME_UNIT;
+
+fragment BYTE_UNIT : [KkMmGgTt]? [Bb];
+fragment TIME_UNIT : ('ms' | 's' | 'sec' | 'm' | 'min' | 'h' | 'hr');
+
+fragment DIGITS    : [0-9]+;

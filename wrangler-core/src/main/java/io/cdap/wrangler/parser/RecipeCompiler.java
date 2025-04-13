@@ -70,7 +70,7 @@ public final class RecipeCompiler implements Compiler {
       parser.addErrorListener(errorListener);
       parser.setErrorHandler(new GrammarParserInterpreter.BailButConsumeErrorStrategy());
       parser.setBuildParseTree(true);
-      ParseTree tree = parser.statements();
+      ParseTree tree = parser.recipe();
 
       if (errorListener.hasErrors()) {
         return new CompileStatus(true, errorListener.iterator());
